@@ -1,0 +1,18 @@
+{
+  "name": "pos-system",
+  "version": "1.0.0",
+  "description": "POS System - Point of Sale",
+  "private": true,
+  "scripts": {
+    "dev:both": "concurrently \"npm run dev --prefix backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "set PORT=3002 && npm run dev --prefix frontend",
+    "dev:backend": "npm run dev --prefix backend",
+    "start:both": "concurrently \"npm start --prefix backend\" \"npm start --prefix frontend\"",
+    "start:backend": "npm start --prefix backend",
+    "start:frontend": "npm start --prefix frontend",
+    "build:frontend": "npm run build --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
