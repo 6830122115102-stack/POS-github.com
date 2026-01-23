@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { reportsAPI } from '../services/api';
 import { formatCurrency, downloadFile } from '../utils/format';
 import toast from 'react-hot-toast';
@@ -12,11 +12,7 @@ const Reports = () => {
     end_date: new Date().toISOString().split('T')[0],
   });
 
-  useEffect(() => {
-    fetchReports();
-  }, [dateRange]); // eslint-disable-next-line react-hooks/exhaustive-deps
-
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     try {
       const [summaryRes, topProductsRes] = await Promise.all([
         reportsAPI.getSalesSummary(dateRange),
@@ -28,7 +24,11 @@ const Reports = () => {
     } catch (error) {
       toast.error('Error loading reports');
     }
-  };
+  }, [dateRange]);
+
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
 
   const validateDateRange = () => {
     if (dateRange.start_date > dateRange.end_date) {
