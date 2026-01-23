@@ -140,32 +140,31 @@ function createDefaultAdmin() {
   const defaultAdmin = {
     username: 'admin',
     email: 'admin@pos.com',
-    password: 'admin123',
+    password: 'P@ssw0rd',
     full_name: 'System Administrator',
     role: 'admin'
   };
 
-  db.get('SELECT id FROM users WHERE username = ?', [defaultAdmin.username], async (err, row) => {
+  // First, delete any existing admin user
+  db.run('DELETE FROM users WHERE username = ?', [defaultAdmin.username], async (err) => {
     if (err) {
-      console.error('Error checking admin:', err);
+      console.error('Error deleting old admin:', err);
       return;
     }
 
-    if (!row) {
-      const hashedPassword = await bcrypt.hash(defaultAdmin.password, 10);
+    const hashedPassword = await bcrypt.hash(defaultAdmin.password, 10);
 
-      db.run(
-        `INSERT INTO users (username, email, password, full_name, role) VALUES (?, ?, ?, ?, ?)`,
-        [defaultAdmin.username, defaultAdmin.email, hashedPassword, defaultAdmin.full_name, defaultAdmin.role],
-        (err) => {
-          if (err) {
-            console.error('Error creating admin:', err);
-          } else {
-            console.log('Default admin created - Username: admin, Password: admin123');
-          }
+    db.run(
+      `INSERT INTO users (username, email, password, full_name, role) VALUES (?, ?, ?, ?, ?)`,
+      [defaultAdmin.username, defaultAdmin.email, hashedPassword, defaultAdmin.full_name, defaultAdmin.role],
+      (err) => {
+        if (err) {
+          console.error('Error creating admin:', err);
+        } else {
+          console.log('Default admin created - Username: admin, Password: P@ssw0rd');
         }
-      );
-    }
+      }
+    );
   });
 }
 
