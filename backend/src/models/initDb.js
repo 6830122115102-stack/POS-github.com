@@ -145,26 +145,32 @@ function createDefaultAdmin() {
     role: 'admin'
   };
 
-  // First, delete any existing admin user
-  db.run('DELETE FROM users WHERE username = ?', [defaultAdmin.username], async (err) => {
+  // Hash password synchronously for the callback
+  bcrypt.hash(defaultAdmin.password, 10, (err, hashedPassword) => {
     if (err) {
-      console.error('Error deleting old admin:', err);
+      console.error('Error hashing password:', err);
       return;
     }
 
-    const hashedPassword = await bcrypt.hash(defaultAdmin.password, 10);
-
-    db.run(
-      `INSERT INTO users (username, email, password, full_name, role) VALUES (?, ?, ?, ?, ?)`,
-      [defaultAdmin.username, defaultAdmin.email, hashedPassword, defaultAdmin.full_name, defaultAdmin.role],
-      (err) => {
-        if (err) {
-          console.error('Error creating admin:', err);
-        } else {
-          console.log('Default admin created - Username: admin, Password: P@ssw0rd');
-        }
+    // First, delete any existing admin user
+    db.run('DELETE FROM users WHERE username = ?', [defaultAdmin.username], (deleteErr) => {
+      if (deleteErr) {
+        console.error('Error deleting old admin:', deleteErr);
+        return;
       }
-    );
+
+      db.run(
+        `INSERT INTO users (username, email, password, full_name, role) VALUES (?, ?, ?, ?, ?)`,
+        [defaultAdmin.username, defaultAdmin.email, hashedPassword, defaultAdmin.full_name, defaultAdmin.role],
+        (insertErr) => {
+          if (insertErr) {
+            console.error('Error creating admin:', insertErr);
+          } else {
+            console.log('✓ Default admin created - Username: admin, Password: P@ssw0rd');
+          }
+        }
+      );
+    });
   });
 }
 
