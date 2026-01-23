@@ -5,9 +5,9 @@ const { dbAsync } = require('../models/db');
 // Generate JWT token
 const generateToken = (user) => {
   return jwt.sign(
-    { id: user.id, username: user.username, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRE }
+    { id: user.id, username: user.username, role: user.role, full_name: user.full_name },
+    process.env.JWT_SECRET || 'your-secret-key',
+    { expiresIn: '7d' }
   );
 };
 
@@ -17,7 +17,10 @@ exports.login = async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
-      return res.status(400).json({ error: 'Please provide username and password' });
+      return res.status(400).json({
+        success: false,
+        error: 'Username and password are required'
+      });
     }
 
     // Find user
@@ -27,30 +30,40 @@ exports.login = async (req, res) => {
     );
 
     if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid username or password'
+      });
     }
 
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid username or password'
+      });
     }
 
     // Generate token
     const token = generateToken(user);
 
     // Remove password from response
-    delete user.password;
+    const userResponse = { ...user };
+    delete userResponse.password;
 
     res.json({
       success: true,
       token,
-      user
+      user: userResponse
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Server error during login' });
+    res.status(500).json({
+      success: false,
+      error: 'Server error during login'
+    });
   }
 };
 
@@ -63,13 +76,22 @@ exports.getProfile = async (req, res) => {
     );
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
     }
 
-    res.json(user);
+    res.json({
+      success: true,
+      data: user
+    });
   } catch (error) {
     console.error('Get profile error:', error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
   }
 };
 
@@ -79,7 +101,10 @@ exports.changePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({ error: 'Please provide current and new password' });
+      return res.status(400).json({
+        success: false,
+        error: 'Current password and new password are required'
+      });
     }
 
     // Get user with password
@@ -88,11 +113,29 @@ exports.changePassword = async (req, res) => {
       [req.user.id]
     );
 
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
     // Verify current password
     const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Current password is incorrect' });
+      return res.status(401).json({
+        success: false,
+        error: 'Current password is incorrect'
+      });
+    }
+
+    // Validate new password
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        error: 'New password must be at least 6 characters'
+      });
     }
 
     // Hash new password
@@ -104,9 +147,15 @@ exports.changePassword = async (req, res) => {
       [hashedPassword, req.user.id]
     );
 
-    res.json({ success: true, message: 'Password changed successfully' });
+    res.json({
+      success: true,
+      message: 'Password changed successfully'
+    });
   } catch (error) {
     console.error('Change password error:', error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
   }
 };
