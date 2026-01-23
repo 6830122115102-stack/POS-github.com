@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { customersAPI } from '../services/api';
 import { formatCurrency } from '../utils/format';
 import toast from 'react-hot-toast';
-import { Plus, Edit2, Trash2, Search, Eye } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search } from 'lucide-react';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 
 const Customers = () => {

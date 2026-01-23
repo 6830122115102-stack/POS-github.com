@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { customersAPI, salesAPI, settingsAPI } from '../services/api';
 import { formatCurrency } from '../utils/format';
 import toast from 'react-hot-toast';
-import { Search, Plus, Minus, Trash2, ShoppingCart, Printer, X } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, ShoppingCart, X } from 'lucide-react';
 import { useProducts } from '../context/ProductContext';
 
 const PointOfSale = () => {
@@ -140,7 +140,7 @@ const PointOfSale = () => {
     setLoading(true);
 
     try {
-      const { subtotal, tax, total, validDiscount } = calculateTotals();
+      const { validDiscount } = calculateTotals();
 
       const saleData = {
         customer_id: selectedCustomer?.id || null,
@@ -193,7 +193,7 @@ const PointOfSale = () => {
     product.stock_quantity > 0
   );
 
-  const { subtotal, tax, total, validDiscount } = calculateTotals();
+  const { total } = calculateTotals();
 
   return (
     <div>
@@ -218,14 +218,7 @@ const PointOfSale = () => {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {filteredProducts.map((product, idx) => {
-              const gradients = [
-                'from-blue-500/10 to-indigo-500/10',
-                'from-purple-500/10 to-pink-500/10',
-                'from-emerald-500/10 to-teal-500/10',
-                'from-orange-500/10 to-red-500/10',
-              ];
-              return (
+            {filteredProducts.map((product) => (
               <div
                 key={product.id}
                 onClick={() => addToCart(product)}
@@ -253,8 +246,7 @@ const PointOfSale = () => {
                   </div>
                 </div>
               </div>
-              );
-            })}
+            ))}
           </div>
         </div>
 
