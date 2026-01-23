@@ -193,7 +193,7 @@ const PointOfSale = () => {
     product.stock_quantity > 0
   );
 
-  const { total } = calculateTotals();
+  const { subtotal, tax, total } = calculateTotals();
 
   return (
     <div>
