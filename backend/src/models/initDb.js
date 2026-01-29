@@ -270,13 +270,27 @@ function seedSampleData() {
   });
 }
 
-// Run initialization
-initializeDatabase();
+// Promise-based initialization to ensure proper sequencing
+const dbInitialized = new Promise((resolve, reject) => {
+  db.serialize(() => {
+    initializeDatabase();
 
-// Seed data after a short delay to ensure tables are created
-setTimeout(() => {
-  createDefaultSettings();
-  seedSampleData();
-}, 1000);
+    // After tables are created, create admin user
+    setTimeout(() => {
+      createDefaultAdmin();
+
+      // Then seed additional data
+      setTimeout(() => {
+        createDefaultSettings();
+        seedSampleData();
+        console.log('✓ Database initialization complete');
+        resolve();
+      }, 500);
+    }, 500);
+  });
+});
+
+// Ensure database is initialized before any queries
+db.dbInitialized = dbInitialized;
 
 module.exports = db;

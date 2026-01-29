@@ -5,7 +5,7 @@ const path = require('path');
 const os = require('os');
 
 // Initialize database
-require('./models/initDb');
+const db = require('./models/initDb');
 
 const app = express();
 
@@ -96,31 +96,45 @@ app.use((req, res) => {
   }
 });
 
-// Start server
+// Start server only after database is initialized
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  // Get local IP address
-  const interfaces = os.networkInterfaces();
-  let localIP = 'localhost';
 
-  for (const name of Object.keys(interfaces)) {
-    for (const iface of interfaces[name]) {
-      // Skip internal and non-IPv4 addresses
-      if (iface.family === 'IPv4' && !iface.internal) {
-        localIP = iface.address;
-        break;
+// Wait for database initialization before starting server
+if (db.dbInitialized) {
+  db.dbInitialized.then(() => {
+    app.listen(PORT, () => {
+      // Get local IP address
+      const interfaces = os.networkInterfaces();
+      let localIP = 'localhost';
+
+      for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+          // Skip internal and non-IPv4 addresses
+          if (iface.family === 'IPv4' && !iface.internal) {
+            localIP = iface.address;
+            break;
+          }
+        }
       }
-    }
-  }
 
-  console.log('\n' + '='.repeat(60));
-  console.log('🚀 POS API SERVER STARTED');
-  console.log('='.repeat(60));
-  console.log(`Local:        http://localhost:${PORT}`);
-  console.log(`Network:      http://${localIP}:${PORT}`);
-  console.log(`API Base:     http://localhost:${PORT}/api`);
-  console.log(`API Network:  http://${localIP}:${PORT}/api`);
-  console.log('='.repeat(60) + '\n');
-});
+      console.log('\n' + '='.repeat(60));
+      console.log('🚀 POS API SERVER STARTED');
+      console.log('='.repeat(60));
+      console.log(`Local:        http://localhost:${PORT}`);
+      console.log(`Network:      http://${localIP}:${PORT}`);
+      console.log(`API Base:     http://localhost:${PORT}/api`);
+      console.log(`API Network:  http://${localIP}:${PORT}/api`);
+      console.log('='.repeat(60) + '\n');
+    });
+  }).catch((err) => {
+    console.error('Failed to initialize database:', err);
+    process.exit(1);
+  });
+} else {
+  // Fallback if dbInitialized is not available
+  app.listen(PORT, () => {
+    console.log(`POS API running on port ${PORT}`);
+  });
+}
 
 module.exports = app;
