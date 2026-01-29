@@ -12,7 +12,7 @@ const app = express();
 // Middleware
 // Configure CORS for both development and production
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3003',
+  origin: process.env.CORS_ORIGIN || ['http://localhost:3003', 'https://posfrontend.netlify.app'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
