@@ -12,7 +12,7 @@ const app = express();
 // Middleware
 // Configure CORS for both development and production
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3002',
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3003',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
