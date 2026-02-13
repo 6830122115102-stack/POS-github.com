@@ -104,9 +104,17 @@ class ProductController {
         if (currentProduct.image_path) {
           const oldImagePath = path.join(__dirname, '../../', currentProduct.image_path);
           try {
+            // Check if file exists before trying to delete
+            await fs.access(oldImagePath);
             await fs.unlink(oldImagePath);
+            console.log(`✓ Deleted old image: ${currentProduct.image_path}`);
           } catch (err) {
-            console.error('Error deleting old image:', err);
+            // File doesn't exist or can't be deleted - not a critical error
+            if (err.code === 'ENOENT') {
+              console.warn(`⚠️  Old image not found (already deleted): ${currentProduct.image_path}`);
+            } else {
+              console.error('Error deleting old image:', err);
+            }
           }
         }
         imagePath = `/uploads/products/${req.file.filename}`;
@@ -162,9 +170,17 @@ class ProductController {
       if (product.image_path) {
         const imagePath = path.join(__dirname, '../../', product.image_path);
         try {
+          // Check if file exists before trying to delete
+          await fs.access(imagePath);
           await fs.unlink(imagePath);
+          console.log(`✓ Deleted product image: ${product.image_path}`);
         } catch (err) {
-          console.error('Error deleting image:', err);
+          // File doesn't exist or can't be deleted - not a critical error
+          if (err.code === 'ENOENT') {
+            console.warn(`⚠️  Product image not found (already deleted): ${product.image_path}`);
+          } else {
+            console.error('Error deleting image:', err);
+          }
         }
       }
 
