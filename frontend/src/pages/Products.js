@@ -6,6 +6,12 @@ import { Plus, Edit2, Trash2, Search, AlertTriangle, Package } from 'lucide-reac
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import { useProducts } from '../context/ProductContext';
 
+// Get API base URL (without /api suffix)
+const getApiBaseUrl = () => {
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+  return apiUrl.replace('/api', '');
+};
+
 const Products = () => {
   const { products, fetchProducts, deleteProduct } = useProducts();
   const [showModal, setShowModal] = useState(false);
@@ -23,6 +29,7 @@ const Products = () => {
     low_stock_threshold: '10',
   });
   const [imageFile, setImageFile] = useState(null);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -162,6 +169,7 @@ const Products = () => {
       });
     }
     setImageFile(null);
+    setImageError(false);
     setShowModal(true);
   };
 
@@ -169,6 +177,7 @@ const Products = () => {
     setShowModal(false);
     setEditingProduct(null);
     setImageFile(null);
+    setImageError(false);
   };
 
   const filteredProducts = products.filter(product =>
@@ -219,11 +228,20 @@ const Products = () => {
                 <tr key={product.id}>
                   <td>
                     {product.image_path ? (
-                      <img
-                        src={`http://localhost:5000${product.image_path}`}
-                        alt={product.name}
-                        className="w-16 h-16 object-cover rounded-xl shadow-sm"
-                      />
+                      <>
+                        <img
+                          src={`${getApiBaseUrl()}${product.image_path}`}
+                          alt={product.name}
+                          className="w-16 h-16 object-cover rounded-xl shadow-sm"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextElementSibling.style.display = 'flex';
+                          }}
+                        />
+                        <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl items-center justify-center hidden">
+                          <Package className="w-6 h-6 text-gray-400" />
+                        </div>
+                      </>
                     ) : (
                       <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center">
                         <Package className="w-6 h-6 text-gray-400" />
@@ -382,12 +400,13 @@ const Products = () => {
                         className="input flex-1"
                         onChange={(e) => setImageFile(e.target.files[0])}
                       />
-                      {(imageFile || editingProduct?.image_path) && (
+                      {(imageFile || (editingProduct?.image_path && !imageError)) && (
                         <div className="w-24 h-24 rounded-xl overflow-hidden border-2 border-gray-200 shadow-sm">
                           <img
-                            src={imageFile ? URL.createObjectURL(imageFile) : `http://localhost:5000${editingProduct.image_path}`}
+                            src={imageFile ? URL.createObjectURL(imageFile) : `${getApiBaseUrl()}${editingProduct.image_path}`}
                             alt="Preview"
                             className="w-full h-full object-cover"
+                            onError={() => setImageError(true)}
                           />
                         </div>
                       )}
