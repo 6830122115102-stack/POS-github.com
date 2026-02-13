@@ -70,6 +70,26 @@ app.use((req, res, next) => {
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// Middleware to handle missing image files gracefully
+app.use('/uploads/products/:filename', async (req, res, next) => {
+  const fs = require('fs').promises;
+  const filePath = path.join(__dirname, '../uploads/products', req.params.filename);
+
+  try {
+    await fs.access(filePath);
+    // File exists, it was already served by express.static above
+    // This middleware only runs if static middleware didn't find it
+  } catch (error) {
+    // File doesn't exist, log warning and return 404
+    console.warn(`⚠️  Missing product image: ${req.params.filename}`);
+    res.status(404).json({
+      error: 'Image not found',
+      message: 'The requested product image does not exist',
+      filename: req.params.filename
+    });
+  }
+});
+
 // Import route factories
 const createAuthRoutes = require('./routes/auth');
 const createProductRoutes = require('./routes/products');
