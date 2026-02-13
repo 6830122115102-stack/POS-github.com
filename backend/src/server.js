@@ -22,10 +22,20 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
+
     // In development, allow all local origins
     if (process.env.NODE_ENV !== 'production') return callback(null, true);
+
+    // Allow any Netlify app subdomain (*.netlify.app)
+    if (origin && origin.match(/^https:\/\/.*\.netlify\.app$/)) {
+      return callback(null, true);
+    }
+
     // Allow configured origins for production
     if (allowedOrigins.includes(origin)) return callback(null, true);
+
+    // Log rejected origins for debugging
+    console.warn(`⚠️  CORS rejected origin: ${origin}`);
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
