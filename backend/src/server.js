@@ -67,26 +67,29 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve uploaded files statically
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Custom middleware to serve uploaded files with error handling
+const fs = require('fs').promises;
 
-// Middleware to handle missing image files gracefully
-app.use('/uploads/products/:filename', async (req, res, next) => {
-  const fs = require('fs').promises;
-  const filePath = path.join(__dirname, '../uploads/products', req.params.filename);
+app.use('/uploads', async (req, res, next) => {
+  const filePath = path.join(__dirname, '../uploads', req.path);
 
   try {
+    // Check if file exists first
     await fs.access(filePath);
-    // File exists, it was already served by express.static above
-    // This middleware only runs if static middleware didn't find it
+    // File exists, serve it
+    res.sendFile(filePath);
   } catch (error) {
-    // File doesn't exist, log warning and return 404
-    console.warn(`⚠️  Missing product image: ${req.params.filename}`);
-    res.status(404).json({
-      error: 'Image not found',
-      message: 'The requested product image does not exist',
-      filename: req.params.filename
-    });
+    // File doesn't exist
+    if (req.path.startsWith('/products/')) {
+      console.warn(`⚠️  Missing product image: ${req.path}`);
+      return res.status(404).json({
+        error: 'Image not found',
+        message: 'The requested product image does not exist',
+        path: req.path
+      });
+    }
+    // For other upload types, pass to next middleware
+    next();
   }
 });
 
