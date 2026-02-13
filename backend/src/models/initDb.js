@@ -129,9 +129,6 @@ function initializeDatabase() {
     `);
 
     console.log('Database tables created successfully');
-
-    // Create default admin user
-    createDefaultAdmin();
   });
 }
 

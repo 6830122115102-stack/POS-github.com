@@ -1,8 +1,7 @@
 const express = require('express');
-const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const productsController = require('../controllers/productsController');
+const { TYPES } = require('../config/inversify.config');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 
 // Configure multer for image upload
@@ -30,35 +29,39 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: fileFilter
 });
 
-// All routes require authentication
-router.use(authenticateToken);
+function createProductRoutes(container) {
+  const router = express.Router();
+  const controller = container.get(TYPES.ProductController);
 
-// Public (authenticated) routes
-router.get('/', productsController.getAllProducts);
-router.get('/categories', productsController.getCategories);
-router.get('/low-stock', productsController.getLowStock);
-router.get('/:id', productsController.getProduct);
+  router.use(authenticateToken);
 
-// Admin/Manager only routes
-router.post('/',
-  authorizeRoles('admin', 'manager'),
-  upload.single('image'),
-  productsController.createProduct
-);
+  router.get('/', (req, res) => controller.getAllProducts(req, res));
+  router.get('/categories', (req, res) => controller.getCategories(req, res));
+  router.get('/low-stock', (req, res) => controller.getLowStock(req, res));
+  router.get('/:id', (req, res) => controller.getProduct(req, res));
 
-router.put('/:id',
-  authorizeRoles('admin', 'manager'),
-  upload.single('image'),
-  productsController.updateProduct
-);
+  router.post('/',
+    authorizeRoles('admin', 'manager'),
+    upload.single('image'),
+    (req, res) => controller.createProduct(req, res)
+  );
 
-router.delete('/:id',
-  authorizeRoles('admin', 'manager'),
-  productsController.deleteProduct
-);
+  router.put('/:id',
+    authorizeRoles('admin', 'manager'),
+    upload.single('image'),
+    (req, res) => controller.updateProduct(req, res)
+  );
 
-module.exports = router;
+  router.delete('/:id',
+    authorizeRoles('admin', 'manager'),
+    (req, res) => controller.deleteProduct(req, res)
+  );
+
+  return router;
+}
+
+module.exports = createProductRoutes;

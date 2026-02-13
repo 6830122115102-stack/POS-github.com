@@ -140,12 +140,13 @@ class BaseRepository {
       const placeholders = columns.map(() => '?').join(',');
       const sql = `INSERT INTO ${this.tableName} (${columns.join(',')}) VALUES (${placeholders})`;
 
-      this.db.run(sql, values, function(err) {
+      const db = this.db;
+      const tableName = this.tableName;
+      db.run(sql, values, function(err) {
         if (err) reject(err);
         else {
           const newId = this.lastID;
-          // Fetch and return the created record
-          this.db.get(`SELECT * FROM ${this.tableName} WHERE id = ?`, [newId], (err, row) => {
+          db.get(`SELECT * FROM ${tableName} WHERE id = ?`, [newId], (err, row) => {
             if (err) reject(err);
             else resolve(row);
           });
@@ -169,11 +170,12 @@ class BaseRepository {
       const setClause = columns.map(col => `${col} = ?`).join(',');
       const sql = `UPDATE ${this.tableName} SET ${setClause} WHERE id = ?`;
 
-      this.db.run(sql, values, function(err) {
+      const db = this.db;
+      const tableName = this.tableName;
+      db.run(sql, values, function(err) {
         if (err) reject(err);
         else {
-          // Fetch and return updated record
-          this.db.get(`SELECT * FROM ${this.tableName} WHERE id = ?`, [id], (err, row) => {
+          db.get(`SELECT * FROM ${tableName} WHERE id = ?`, [id], (err, row) => {
             if (err) reject(err);
             else resolve(row);
           });

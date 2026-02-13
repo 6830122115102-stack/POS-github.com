@@ -25,6 +25,15 @@ const ReportService = require('../services/ReportService');
 const SettingService = require('../services/SettingService');
 const FileService = require('../services/FileService');
 
+// Import controllers
+const AuthController = require('../controllers/authController');
+const ProductController = require('../controllers/productsController');
+const SalesController = require('../controllers/salesController');
+const CustomerController = require('../controllers/customersController');
+const UserController = require('../controllers/usersController');
+const ReportController = require('../controllers/reportsController');
+const SettingController = require('../controllers/settingsController');
+
 // Repository symbols
 const TYPES = {
   // Database
@@ -39,7 +48,7 @@ const TYPES = {
   StockMovementRepository: Symbol('StockMovementRepository'),
   SettingRepository: Symbol('SettingRepository'),
 
-  // Services (will be added when we create them)
+  // Services
   AuthService: Symbol('AuthService'),
   ProductService: Symbol('ProductService'),
   SalesService: Symbol('SalesService'),
@@ -47,7 +56,16 @@ const TYPES = {
   UserService: Symbol('UserService'),
   ReportService: Symbol('ReportService'),
   SettingService: Symbol('SettingService'),
-  FileService: Symbol('FileService')
+  FileService: Symbol('FileService'),
+
+  // Controllers
+  AuthController: Symbol('AuthController'),
+  ProductController: Symbol('ProductController'),
+  SalesController: Symbol('SalesController'),
+  CustomerController: Symbol('CustomerController'),
+  UserController: Symbol('UserController'),
+  ReportController: Symbol('ReportController'),
+  SettingController: Symbol('SettingController')
 };
 
 /**
@@ -91,7 +109,7 @@ function setupContainer(db) {
   }).inSingletonScope();
 
   // Register services
-  container.bind(TYPES.FileService).toConstantValue(new FileService()).inSingletonScope();
+  container.bind(TYPES.FileService).toConstantValue(new FileService());
 
   container.bind(TYPES.AuthService).toDynamicValue((context) => {
     const userRepository = context.container.get(TYPES.UserRepository);
@@ -136,6 +154,51 @@ function setupContainer(db) {
   container.bind(TYPES.SettingService).toDynamicValue((context) => {
     const settingRepository = context.container.get(TYPES.SettingRepository);
     return new SettingService(settingRepository);
+  }).inSingletonScope();
+
+  // Register controllers
+  container.bind(TYPES.AuthController).toDynamicValue((context) => {
+    const authService = context.container.get(TYPES.AuthService);
+    const userRepository = context.container.get(TYPES.UserRepository);
+    return new AuthController(authService, userRepository);
+  }).inSingletonScope();
+
+  container.bind(TYPES.ProductController).toDynamicValue((context) => {
+    const productRepository = context.container.get(TYPES.ProductRepository);
+    const stockMovementRepository = context.container.get(TYPES.StockMovementRepository);
+    return new ProductController(productRepository, stockMovementRepository);
+  }).inSingletonScope();
+
+  container.bind(TYPES.SalesController).toDynamicValue((context) => {
+    const saleRepository = context.container.get(TYPES.SaleRepository);
+    const saleItemRepository = context.container.get(TYPES.SaleItemRepository);
+    const productRepository = context.container.get(TYPES.ProductRepository);
+    const customerRepository = context.container.get(TYPES.CustomerRepository);
+    const stockMovementRepository = context.container.get(TYPES.StockMovementRepository);
+    return new SalesController(saleRepository, saleItemRepository, productRepository, customerRepository, stockMovementRepository);
+  }).inSingletonScope();
+
+  container.bind(TYPES.CustomerController).toDynamicValue((context) => {
+    const customerRepository = context.container.get(TYPES.CustomerRepository);
+    const saleRepository = context.container.get(TYPES.SaleRepository);
+    return new CustomerController(customerRepository, saleRepository);
+  }).inSingletonScope();
+
+  container.bind(TYPES.UserController).toDynamicValue((context) => {
+    const userRepository = context.container.get(TYPES.UserRepository);
+    return new UserController(userRepository);
+  }).inSingletonScope();
+
+  container.bind(TYPES.ReportController).toDynamicValue((context) => {
+    const saleRepository = context.container.get(TYPES.SaleRepository);
+    const productRepository = context.container.get(TYPES.ProductRepository);
+    const customerRepository = context.container.get(TYPES.CustomerRepository);
+    return new ReportController(saleRepository, productRepository, customerRepository);
+  }).inSingletonScope();
+
+  container.bind(TYPES.SettingController).toDynamicValue((context) => {
+    const settingRepository = context.container.get(TYPES.SettingRepository);
+    return new SettingController(settingRepository);
   }).inSingletonScope();
 
   return container;

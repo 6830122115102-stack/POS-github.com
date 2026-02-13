@@ -7,15 +7,30 @@ const os = require('os');
 // Initialize database
 const db = require('./models/initDb');
 
+// Dependency injection
+const { setupContainer, TYPES } = require('./config/inversify.config');
+
 const app = express();
 
 // Middleware
 // Configure CORS for both development and production
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',')
+  : ['https://posfrontend.netlify.app'];
+
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || ['http://localhost:3003', 'https://posfrontend.netlify.app'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    // In development, allow all local origins
+    if (process.env.NODE_ENV !== 'production') return callback(null, true);
+    // Allow configured origins for production
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: '*'
 };
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -55,45 +70,18 @@ app.use((req, res, next) => {
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Import routes
-const authRoutes = require('./routes/auth');
-const productsRoutes = require('./routes/products');
-const salesRoutes = require('./routes/sales');
-const customersRoutes = require('./routes/customers');
-const usersRoutes = require('./routes/users');
-const reportsRoutes = require('./routes/reports');
-const settingsRoutes = require('./routes/settings');
-
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/products', productsRoutes);
-app.use('/api/sales', salesRoutes);
-app.use('/api/customers', customersRoutes);
-app.use('/api/users', usersRoutes);
-app.use('/api/reports', reportsRoutes);
-app.use('/api/settings', settingsRoutes);
+// Import route factories
+const createAuthRoutes = require('./routes/auth');
+const createProductRoutes = require('./routes/products');
+const createSalesRoutes = require('./routes/sales');
+const createCustomerRoutes = require('./routes/customers');
+const createUserRoutes = require('./routes/users');
+const createReportRoutes = require('./routes/reports');
+const createSettingRoutes = require('./routes/settings');
 
 // Health check route
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'POS API is running' });
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal server error'
-  });
-});
-
-// 404 handler - only return error for API requests
-app.use((req, res) => {
-  if (req.path.startsWith('/api')) {
-    res.status(404).json({ error: 'API Route not found' });
-  } else {
-    // For non-API routes, don't respond (let frontend handle routing)
-    res.status(404).send('Not found');
-  }
 });
 
 // Start server only after database is initialized
@@ -102,6 +90,38 @@ const PORT = process.env.PORT || 5000;
 // Wait for database initialization before starting server
 if (db.dbInitialized) {
   db.dbInitialized.then(() => {
+    // Initialize DI container after database is ready
+    const container = setupContainer(db);
+    app.set('container', container);
+    console.log('✓ DI container initialized');
+
+    // Setup API routes with container
+    app.use('/api/auth', createAuthRoutes(container));
+    app.use('/api/products', createProductRoutes(container));
+    app.use('/api/sales', createSalesRoutes(container));
+    app.use('/api/customers', createCustomerRoutes(container));
+    app.use('/api/users', createUserRoutes(container));
+    app.use('/api/reports', createReportRoutes(container));
+    app.use('/api/settings', createSettingRoutes(container));
+
+    // Error handling middleware (must be after routes)
+    app.use((err, req, res, next) => {
+      console.error('Error:', err);
+      res.status(err.status || 500).json({
+        error: err.message || 'Internal server error'
+      });
+    });
+
+    // 404 handler - only return error for API requests (must be last)
+    app.use((req, res) => {
+      if (req.path.startsWith('/api')) {
+        res.status(404).json({ error: 'API Route not found' });
+      } else {
+        // For non-API routes, don't respond (let frontend handle routing)
+        res.status(404).send('Not found');
+      }
+    });
+
     app.listen(PORT, () => {
       // Get local IP address
       const interfaces = os.networkInterfaces();

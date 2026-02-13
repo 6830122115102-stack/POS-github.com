@@ -1,18 +1,18 @@
 const express = require('express');
-const router = express.Router();
-const settingsController = require('../controllers/settingsController');
+const { TYPES } = require('../config/inversify.config');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 
-// All routes require authentication
-router.use(authenticateToken);
+function createSettingRoutes(container) {
+  const router = express.Router();
+  const controller = container.get(TYPES.SettingController);
 
-// GET all settings - accessible by all authenticated users
-router.get('/', settingsController.getAllSettings);
+  router.use(authenticateToken);
 
-// GET single setting - accessible by all authenticated users
-router.get('/:key', settingsController.getSetting);
+  router.get('/', (req, res) => controller.getAllSettings(req, res));
+  router.get('/:key', (req, res) => controller.getSetting(req, res));
+  router.put('/:key', authorizeRoles('admin'), (req, res) => controller.updateSetting(req, res));
 
-// UPDATE setting - admin only
-router.put('/:key', authorizeRoles('admin'), settingsController.updateSetting);
+  return router;
+}
 
-module.exports = router;
+module.exports = createSettingRoutes;

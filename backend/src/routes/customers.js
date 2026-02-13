@@ -1,29 +1,33 @@
 const express = require('express');
-const router = express.Router();
-const customersController = require('../controllers/customersController');
+const { TYPES } = require('../config/inversify.config');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 
-// All routes require authentication
-router.use(authenticateToken);
+function createCustomerRoutes(container) {
+  const router = express.Router();
+  const controller = container.get(TYPES.CustomerController);
 
-router.get('/', customersController.getAllCustomers);
-router.get('/:id', customersController.getCustomer);
-router.get('/:id/history', customersController.getCustomerHistory);
+  router.use(authenticateToken);
 
-// Admin/Manager only routes
-router.post('/',
-  authorizeRoles('admin', 'manager'),
-  customersController.createCustomer
-);
+  router.get('/', (req, res) => controller.getAllCustomers(req, res));
+  router.get('/:id', (req, res) => controller.getCustomer(req, res));
+  router.get('/:id/history', (req, res) => controller.getCustomerHistory(req, res));
 
-router.put('/:id',
-  authorizeRoles('admin', 'manager'),
-  customersController.updateCustomer
-);
+  router.post('/',
+    authorizeRoles('admin', 'manager'),
+    (req, res) => controller.createCustomer(req, res)
+  );
 
-router.delete('/:id',
-  authorizeRoles('admin', 'manager'),
-  customersController.deleteCustomer
-);
+  router.put('/:id',
+    authorizeRoles('admin', 'manager'),
+    (req, res) => controller.updateCustomer(req, res)
+  );
 
-module.exports = router;
+  router.delete('/:id',
+    authorizeRoles('admin', 'manager'),
+    (req, res) => controller.deleteCustomer(req, res)
+  );
+
+  return router;
+}
+
+module.exports = createCustomerRoutes;

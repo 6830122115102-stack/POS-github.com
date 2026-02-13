@@ -1,14 +1,19 @@
 const express = require('express');
-const router = express.Router();
-const salesController = require('../controllers/salesController');
+const { TYPES } = require('../config/inversify.config');
 const { authenticateToken } = require('../middleware/auth');
 
-// All routes require authentication
-router.use(authenticateToken);
+function createSalesRoutes(container) {
+  const router = express.Router();
+  const controller = container.get(TYPES.SalesController);
 
-router.get('/', salesController.getAllSales);
-router.get('/:id', salesController.getSale);
-router.post('/', salesController.createSale);
-router.get('/:id/invoice', salesController.generateInvoice);
+  router.use(authenticateToken);
 
-module.exports = router;
+  router.get('/', (req, res) => controller.getAllSales(req, res));
+  router.get('/:id', (req, res) => controller.getSale(req, res));
+  router.post('/', (req, res) => controller.createSale(req, res));
+  router.get('/:id/invoice', (req, res) => controller.generateInvoice(req, res));
+
+  return router;
+}
+
+module.exports = createSalesRoutes;

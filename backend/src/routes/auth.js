@@ -1,13 +1,19 @@
 const express = require('express');
-const router = express.Router();
-const authController = require('../controllers/authController');
+const { TYPES } = require('../config/inversify.config');
 const { authenticateToken } = require('../middleware/auth');
 
-// Public routes
-router.post('/login', authController.login);
+function createAuthRoutes(container) {
+  const router = express.Router();
+  const authController = container.get(TYPES.AuthController);
 
-// Protected routes
-router.get('/profile', authenticateToken, authController.getProfile);
-router.post('/change-password', authenticateToken, authController.changePassword);
+  // Public routes
+  router.post('/login', (req, res) => authController.login(req, res));
 
-module.exports = router;
+  // Protected routes
+  router.get('/profile', authenticateToken, (req, res) => authController.getProfile(req, res));
+  router.post('/change-password', authenticateToken, (req, res) => authController.changePassword(req, res));
+
+  return router;
+}
+
+module.exports = createAuthRoutes;
